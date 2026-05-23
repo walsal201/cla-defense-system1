@@ -6,12 +6,11 @@
     <title>CLA Defense System | Captain's Command Center</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Load Leaflet with fallback -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0a0a2a 0%, #1a1a3a 100%); min-height: 100vh; color: #fff; }
-        .navbar { background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00ff41; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+        .navbar { background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00ff41; flex-wrap: wrap; gap: 15px; }
         .logo-text { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #00ff41, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .nav-links { display: flex; gap: 20px; flex-wrap: wrap; }
         .nav-links a { color: #ccc; text-decoration: none; padding: 8px 0; cursor: pointer; font-weight: 600; }
@@ -41,17 +40,19 @@
         .quantity-control { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0; }
         .quantity-btn { background: #333; border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; }
         .quantity-btn:hover { background: #00ff41; color: #000; }
-        .execute-btn { background: linear-gradient(135deg, #ff4400, #cc0000); border: none; color: white; padding: 8px; border-radius: 20px; cursor: pointer; font-weight: 700; width: 100%; transition: all 0.3s; }
+        .execute-btn { background: linear-gradient(135deg, #ff4400, #cc0000); border: none; color: white; padding: 8px; border-radius: 20px; cursor: pointer; font-weight: 700; width: 100%; }
         .execute-btn:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(255,68,0,0.5); }
         
         .map-camera-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; margin-bottom: 20px; }
-        .map-container { background: rgba(0, 0, 0, 0.7); border-radius: 15px; padding: 15px; min-height: 400px; }
+        @media (max-width: 900px) { .map-camera-grid { grid-template-columns: 1fr; } }
+        .map-container { background: rgba(0, 0, 0, 0.7); border-radius: 15px; padding: 15px; }
         #commandMap { height: 400px; width: 100%; border-radius: 10px; background: #1a1a2a; }
         .camera-panel { background: rgba(0, 0, 0, 0.7); border-radius: 15px; padding: 15px; }
         .camera-screen { background: #000; border-radius: 10px; height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border: 2px solid #00ff41; }
         .camera-label { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 3px 8px; border-radius: 5px; font-size: 10px; color: #00ff41; }
-        .enemy-info { margin-top: 15px; padding: 12px; background: rgba(255,68,0,0.2); border-radius: 10px; border-left: 3px solid #ff4400; }
-        .child-info { margin-top: 10px; padding: 12px; background: rgba(0,255,65,0.1); border-radius: 10px; border-left: 3px solid #00ff41; }
+        .enemy-info, .child-info { margin-top: 15px; padding: 12px; border-radius: 10px; }
+        .enemy-info { background: rgba(255,68,0,0.2); border-left: 3px solid #ff4400; }
+        .child-info { background: rgba(0,255,65,0.1); border-left: 3px solid #00ff41; }
         
         .mission-log { background: rgba(0, 0, 0, 0.7); border-radius: 15px; padding: 15px; max-height: 250px; overflow-y: auto; margin-top: 20px; }
         .mission-entry { padding: 10px; border-left: 3px solid; margin-bottom: 8px; background: rgba(0,0,0,0.3); border-radius: 5px; font-size: 12px; }
@@ -60,106 +61,69 @@
         .status-eliminated { border-color: #00ff41; }
         
         .ai-panel { background: rgba(0, 0, 0, 0.7); border-radius: 15px; padding: 15px; margin-top: 15px; }
-        .ai-input { width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid #00ff41; border-radius: 8px; color: white; margin: 10px 0; }
-        .ai-response { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 12px; margin-top: 10px; font-size: 13px; line-height: 1.5; }
+        .ai-input { width: 100%; padding: 10px; background: #111; border: 1px solid #00ff41; border-radius: 5px; color: white; margin: 5px 0; }
+        .api-status { font-size: 10px; color: #ffaa00; margin-top: 5px; }
         
         .children-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 15px; }
         .child-card { background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(0, 255, 65, 0.3); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; }
         .child-avatar { width: 45px; height: 45px; background: linear-gradient(135deg, #00ff41, #00aa2a); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
         .child-info { flex: 1; }
         .child-name { font-weight: 700; font-size: 14px; }
-        .child-details { font-size: 10px; color: #aaa; }
-        .btn-small { background: rgba(0, 255, 65, 0.2); border: 1px solid #00ff41; color: #00ff41; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 11px; }
-        
-        @media (max-width: 900px) { .map-camera-grid { grid-template-columns: 1fr; } }
-        .captain-badge { background: #ff4400; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-left: 10px; }
-        .api-status { font-size: 10px; color: #ffaa00; margin-top: 5px; }
-        
-        /* Fix for map tiles */
-        .leaflet-container { background: #1a1a2a; }
-        .leaflet-tile { filter: brightness(0.8) contrast(1.2); }
+        .captain-badge { background: #ff4400; padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-left: 10px; }
+        .btn-primary { background: #00ff41; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; color: #000; }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <div><span class="logo-text">🛡️ CLA DEFENSE SYSTEM</span><span class="captain-badge">CAPTAIN'S AUTHORITY + AI</span></div>
+        <div><span class="logo-text">🛡️ CLA DEFENSE SYSTEM</span><span class="captain-badge">CAPTAIN'S AUTHORITY</span></div>
         <div class="nav-links">
             <a onclick="showPage('command')" class="active" id="nav-command">🎮 COMMAND</a>
             <a onclick="showPage('weapons')" id="nav-weapons">💥 ARMORY</a>
             <a onclick="showPage('register')" id="nav-register">📝 REGISTER</a>
         </div>
-        <div class="status-badge"><span class="status-dot"></span>DEFENSE ACTIVE</div>
+        <div class="status-badge"><span class="status-dot"></span>ONLINE</div>
     </nav>
 
-    <!-- COMMAND PAGE - Main Control Center -->
+    <!-- COMMAND PAGE -->
     <div id="command-page" class="page active">
         <div class="container">
             <div class="stats-grid">
-                <div class="stat-card"><div class="stat-number" id="childrenCount">5</div><div class="stat-label">PROTECTED</div></div>
+                <div class="stat-card"><div class="stat-number" id="childrenCount">4</div><div class="stat-label">PROTECTED</div></div>
                 <div class="stat-card"><div class="stat-number" id="threatsCount">12</div><div class="stat-label">ELIMINATED</div></div>
                 <div class="stat-card"><div class="stat-number">11B</div><div class="stat-label">ACTIVE DRONES</div></div>
                 <div class="stat-card"><div class="stat-number" id="activeMissions">0</div><div class="stat-label">ACTIVE MISSIONS</div></div>
             </div>
 
             <div class="map-camera-grid">
-                <div class="map-container">
-                    <h3 style="margin-bottom: 10px; font-size: 14px;">📍 TACTICAL MAP | Click marker to select target</h3>
-                    <div id="commandMap"></div>
-                </div>
+                <div class="map-container"><h3 style="margin-bottom:10px;font-size:14px;">📍 TACTICAL MAP</h3><div id="commandMap"></div></div>
                 <div class="camera-panel">
-                    <h3 style="margin-bottom: 10px; font-size: 14px;">📹 SURVEILLANCE FEED</h3>
-                    <div class="camera-screen">
-                        <div class="camera-label">LIVE | CAPTAIN'S VIEW</div>
-                        <div style="font-size: 48px; margin-bottom: 10px;" id="cameraIcon">🎥</div>
-                        <div id="cameraStatus" style="font-size: 12px;">Standing by</div>
-                        <div id="cameraTarget" style="font-size: 11px; margin-top: 5px; color: #ffaa00;"></div>
-                    </div>
-                    <div id="enemyDisplay" class="enemy-info" style="display: none;">
-                        <strong>⚠️ TARGET ACQUIRED</strong><br>
-                        <span id="enemyType">Unknown</span> at <span id="enemyCoords">---</span><br>
-                        <span id="childNearby" style="color: #00ff41;"></span>
-                    </div>
-                    <div id="childDisplay" class="child-info" style="display: none;">
-                        <strong>👶 CHILD DETECTED</strong><br>
-                        <span id="childName">---</span> | Chip: <span id="childChip">---</span>
-                    </div>
+                    <h3 style="margin-bottom:10px;font-size:14px;">📹 SURVEILLANCE FEED</h3>
+                    <div class="camera-screen"><div class="camera-label">LIVE FEED</div><div style="font-size:48px;" id="cameraIcon">🎥</div><div id="cameraStatus">Standing by</div><div id="cameraTarget" style="font-size:11px;margin-top:5px;"></div></div>
+                    <div id="enemyDisplay" class="enemy-info" style="display:none;"><strong>⚠️ TARGET ACQUIRED</strong><br><span id="enemyType">---</span><br><span id="childNearby"></span></div>
+                    <div id="childDisplay" class="child-info" style="display:none;"><strong>👶 CHILD DETECTED</strong><br><span id="childName">---</span></div>
                 </div>
             </div>
 
-            <!-- AI TACTICAL ASSISTANT -->
             <div class="ai-panel">
-                <h3 style="margin-bottom: 10px; font-size: 14px;">🤖 AI TACTICAL ASSISTANT (DeepSeek)</h3>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <input type="password" id="apiKeyInput" placeholder="Enter DeepSeek API Key" style="flex: 2; padding: 8px; background: #111; border: 1px solid #00ff41; border-radius: 5px; color: white;">
-                    <input type="text" id="aiQuestion" placeholder="Ask for tactical advice..." style="flex: 3; padding: 8px; background: #111; border: 1px solid #00ff41; border-radius: 5px; color: white;">
-                    <button onclick="askAI()" style="background: #00ff41; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; color: #000;">🤖 ASK AI</button>
+                <h3 style="margin-bottom:10px;font-size:14px;">🤖 AI TACTICAL ASSISTANT</h3>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <input type="password" id="apiKeyInput" placeholder="DeepSeek API Key" style="flex:2; padding:8px; background:#111; border:1px solid #00ff41; border-radius:5px; color:white;">
+                    <input type="text" id="aiQuestion" placeholder="Ask for tactical advice..." style="flex:3; padding:8px; background:#111; border:1px solid #00ff41; border-radius:5px; color:white;">
+                    <button onclick="askAI()" class="btn-primary">🤖 ASK</button>
                 </div>
-                <div id="aiResponse" class="ai-response" style="display: none;">
-                    <strong>AI Response:</strong><br>
-                    <span id="responseText"></span>
-                </div>
-                <div class="api-status" id="apiStatus">⚡ Get your API key from platform.deepseek.com</div>
+                <div id="aiResponse" style="background:#0a0a0a; border-radius:10px; padding:12px; margin-top:10px; display:none;"><strong>AI:</strong> <span id="responseText"></span></div>
+                <div class="api-status">⚡ Get API key from platform.deepseek.com</div>
             </div>
 
-            <div class="weapon-section">
-                <h2>⚡ SELECT WEAPON & EXECUTE CAPTAIN ⚡</h2>
-                <div class="weapon-grid" id="commandWeapons"></div>
-            </div>
-
-            <div class="mission-log">
-                <h3 style="margin-bottom: 10px;">📋 MISSION LOG</h3>
-                <div id="missionLog"></div>
-            </div>
+            <div class="weapon-section"><h2>⚡ SELECT WEAPON & EXECUTE ⚡</h2><div class="weapon-grid" id="commandWeapons"></div></div>
+            <div class="mission-log"><h3 style="margin-bottom:10px;">📋 MISSION LOG</h3><div id="missionLog"></div></div>
         </div>
     </div>
 
     <!-- ARMORY PAGE -->
     <div id="weapons-page" class="page">
         <div class="container">
-            <div class="weapon-section">
-                <h2>💥 ARMORY MANAGEMENT 💥</h2>
-                <div class="weapon-grid" id="armoryList"></div>
-            </div>
+            <div class="weapon-section"><h2>💥 ARMORY MANAGEMENT 💥</h2><div class="weapon-grid" id="armoryList"></div></div>
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-number" id="totalWeapons">0</div><div class="stat-label">TOTAL WEAPONS</div></div>
                 <div class="stat-card"><div class="stat-number" id="deployedStat">0</div><div class="stat-label">🟡 DEPLOYED</div></div>
@@ -169,238 +133,111 @@
         </div>
     </div>
 
-    <!-- REGISTRATION PAGE -->
+    <!-- REGISTER PAGE -->
     <div id="register-page" class="page">
         <div class="container">
-            <div class="weapon-section" style="max-width: 500px; margin: 0 auto;">
+            <div class="weapon-section" style="max-width:500px; margin:0 auto;">
                 <h2>📝 REGISTER NEW CHILD</h2>
                 <form onsubmit="registerChild(event)">
-                    <div style="display: flex; justify-content: space-between; margin: 10px 0;"><label>Child Name:</label><input type="text" id="regName" required style="background:#333; border:none; color:#fff; padding:5px 10px; border-radius:5px;"></div>
-                    <div style="display: flex; justify-content: space-between; margin: 10px 0;"><label>Age:</label><input type="number" id="regAge" required style="background:#333; border:none; color:#fff; padding:5px 10px; border-radius:5px; width:80px;"></div>
-                    <div style="display: flex; justify-content: space-between; margin: 10px 0;"><label>Parent:</label><input type="text" id="regParent" required style="background:#333; border:none; color:#fff; padding:5px 10px; border-radius:5px;"></div>
-                    <div style="display: flex; justify-content: space-between; margin: 10px 0;"><label>GPS Device:</label>
-                        <select id="regDevice" style="background:#333; border:none; color:#fff; padding:5px;">
-                            <option>Necklace</option><option>Smart Bracelet</option><option>GPS Ring</option><option>Smart Shoes</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="execute-btn" style="background: #00ff41; color:#000; margin-top:15px;">✅ REGISTER & PROTECT</button>
+                    <div style="display:flex; justify-content:space-between; margin:10px 0;"><label>Name:</label><input type="text" id="regName" required style="background:#333; border:none; color:#fff; padding:5px 10px; border-radius:5px;"></div>
+                    <div style="display:flex; justify-content:space-between; margin:10px 0;"><label>Age:</label><input type="number" id="regAge" required style="background:#333; border:none; color:#fff; padding:5px; width:80px;"></div>
+                    <div style="display:flex; justify-content:space-between; margin:10px 0;"><label>Parent:</label><input type="text" id="regParent" required style="background:#333; border:none; color:#fff; padding:5px 10px; border-radius:5px;"></div>
+                    <div style="display:flex; justify-content:space-between; margin:10px 0;"><label>GPS Device:</label><select id="regDevice" style="background:#333; border:none; color:#fff; padding:5px;"><option>Necklace</option><option>Smart Bracelet</option><option>GPS Ring</option><option>Smart Shoes</option></select></div>
+                    <button type="submit" class="execute-btn" style="background:#00ff41; color:#000;">✅ REGISTER</button>
                 </form>
             </div>
         </div>
     </div>
 
     <script>
-        // ============================================
-        // DEEPSEEK API KEY - PASTE YOUR KEY HERE
-        // Get from: https://platform.deepseek.com
-        // ============================================
-        const DEEPSEEK_API_KEY = "sk-19f0f27583704899b1700e9465cf7e6e";  // <---- PASTE YOUR API KEY HERE!
-
-        // WEAPONS DATABASE
+        // ========== WEAPONS DATA ==========
         const weapons = [
             { id: 1, name: "Kamikaze", icon: "💥", desc: "Explosive Impact", quantity: 10 },
             { id: 2, name: "Shooter", icon: "🎯", desc: "Precision Targeting", quantity: 15 },
-            { id: 3, name: "Tranquilizers", icon: "⚡", desc: "Non-lethal Injection", quantity: 25 },
-            { id: 4, name: "Nano Spies", icon: "🕵️", desc: "Surveillance Mode", quantity: 8 },
-            { id: 5, name: "Nano Bio Attack", icon: "☣️", desc: "Biological Warfare", quantity: 5 },
-            { id: 6, name: "Nano Robot Attack", icon: "🤖", desc: "Robotic Assault", quantity: 7 }
+            { id: 3, name: "Tranquilizers", icon: "⚡", desc: "Non-lethal", quantity: 25 },
+            { id: 4, name: "Nano Spies", icon: "🕵️", desc: "Surveillance", quantity: 8 },
+            { id: 5, name: "Nano Bio", icon: "☣️", desc: "Bio Warfare", quantity: 5 },
+            { id: 6, name: "Nano Robot", icon: "🤖", desc: "Robotic Assault", quantity: 7 }
         ];
 
         let children = [
-            { id: 1, name: "Emma Watson", age: 8, parent: "John", chip: "Necklace", lat: 40.7128, lng: -74.0060, avatar: "👧" },
-            { id: 2, name: "Liam Chen", age: 12, parent: "Sarah", chip: "Bracelet", lat: 40.7580, lng: -73.9855, avatar: "👦" },
-            { id: 3, name: "Olivia Rodriguez", age: 5, parent: "Maria", chip: "Smart Shoes", lat: 40.6892, lng: -74.0445, avatar: "👧" },
-            { id: 4, name: "Noah Kim", age: 15, parent: "David", chip: "GPS Ring", lat: 40.7489, lng: -73.9680, avatar: "👦" }
+            { id: 1, name: "Emma Watson", age: 8, parent: "John", chip: "Necklace", lat: 40.7128, lng: -74.0060 },
+            { id: 2, name: "Liam Chen", age: 12, parent: "Sarah", chip: "Bracelet", lat: 40.7580, lng: -73.9855 },
+            { id: 3, name: "Olivia Rodriguez", age: 5, parent: "Maria", chip: "Smart Shoes", lat: 40.6892, lng: -74.0445 },
+            { id: 4, name: "Noah Kim", age: 15, parent: "David", chip: "GPS Ring", lat: 40.7489, lng: -73.9680 }
         ];
 
         let missions = [];
         let selectedTarget = null;
-        let selectedWeaponId = null;
         let map = null;
-        let nextChildId = 5;
+        let nextId = 5;
         let threatsEliminated = 12;
-        const enemyTypes = ["🧟 ZOMBIE", "👽 ALIEN", "🦹 KIDNAPPER", "🤖 HOSTILE DRONE", "👾 SPACE INVADER"];
+        const enemyTypes = ["🧟 ZOMBIE", "👽 ALIEN", "🦹 KIDNAPPER", "🤖 HOSTILE DRONE"];
 
-        // ============================================
-        // PAGE NAVIGATION
-        // ============================================
-        function showPage(pageName) {
+        // ========== PAGE NAVIGATION ==========
+        function showPage(page) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(`${pageName}-page`).classList.add('active');
+            document.getElementById(`${page}-page`).classList.add('active');
             document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
-            document.getElementById(`nav-${pageName}`).classList.add('active');
-            if (pageName === 'command') { initCommandMap(); renderCommandWeapons(); updateMissionLog(); }
-            if (pageName === 'weapons') { renderArmory(); updateStats(); }
+            document.getElementById(`nav-${page}`).classList.add('active');
+            if (page === 'command') { initMap(); renderCommandWeapons(); updateMissionLog(); }
+            if (page === 'weapons') { renderArmory(); updateStats(); }
         }
 
-        // ============================================
-        // COMMAND MAP - FIXED
-        // ============================================
-        function initCommandMap() {
-            const mapContainer = document.getElementById('commandMap');
-            if (!mapContainer) return;
-            
-            // Clear container
-            mapContainer.innerHTML = '';
-            
-            // Initialize map with fallback tile layer
+        // ========== MAP ==========
+        function initMap() {
+            const container = document.getElementById('commandMap');
+            if (!container) return;
+            container.innerHTML = '';
             map = L.map('commandMap').setView([40.7128, -74.0060], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: 'Map data &copy; OpenStreetMap' }).addTo(map);
             
-            // Use multiple tile providers as fallback
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-                subdomains: 'abcd',
-                maxZoom: 19,
-                minZoom: 3
-            }).addTo(map);
-            
-            // Add child markers
             children.forEach(child => {
-                const marker = L.marker([child.lat, child.lng]).addTo(map);
-                marker.bindPopup(`
-                    <b>👶 ${child.name}</b><br>
-                    Chip: ${child.chip}<br>
-                    📍 ${child.lat}, ${child.lng}<br>
-                    <button onclick="selectTarget(${child.lat}, ${child.lng}, '${child.name}', true)">🎯 SELECT TARGET</button>
-                `);
+                L.marker([child.lat, child.lng]).addTo(map).bindPopup(`<b>👶 ${child.name}</b><br>Chip: ${child.chip}<br><button onclick="selectTarget(${child.lat}, ${child.lng}, '${child.name}', true)">🎯 SELECT</button>`);
             });
-            
-            // Add enemy markers
             addRandomEnemy();
         }
 
         function addRandomEnemy() {
             if (!map) return;
-            const enemyLat = 40.7128 + (Math.random() - 0.5) * 0.15;
-            const enemyLng = -74.0060 + (Math.random() - 0.5) * 0.15;
-            const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-            
-            const enemyIcon = L.divIcon({ 
-                html: `<div style="font-size:28px;">${enemyType === "🧟 ZOMBIE" ? "🧟" : (enemyType === "👽 ALIEN" ? "👽" : "🦹")}</div>`, 
-                className: 'enemy-marker', 
-                iconSize: [35, 35] 
-            });
-            
-            const enemyMarker = L.marker([enemyLat, enemyLng], { icon: enemyIcon }).addTo(map);
-            enemyMarker.bindPopup(`
-                <b>⚠️ ${enemyType}</b><br>
-                📍 ${enemyLat.toFixed(4)}, ${enemyLng.toFixed(4)}<br>
-                <button onclick="selectTarget(${enemyLat}, ${enemyLng}, '${enemyType}', false)">🎯 SELECT TARGET</button>
-            `);
+            const lat = 40.7128 + (Math.random() - 0.5) * 0.15;
+            const lng = -74.0060 + (Math.random() - 0.5) * 0.15;
+            const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+            const icon = L.divIcon({ html: `<div style="font-size:24px;">${type.charAt(0)}</div>`, iconSize: [30,30] });
+            L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<b>⚠️ ${type}</b><br><button onclick="selectTarget(${lat}, ${lng}, '${type}', false)">🎯 SELECT</button>`);
         }
 
         function selectTarget(lat, lng, name, isChild) {
             selectedTarget = { lat, lng, name, isChild };
-            document.getElementById('cameraStatus').innerHTML = `Target acquired: ${name}`;
+            document.getElementById('cameraStatus').innerHTML = `Target: ${name}`;
             document.getElementById('cameraTarget').innerHTML = `📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
             document.getElementById('cameraIcon').innerHTML = isChild ? "👶" : "🎯";
             
             if (!isChild) {
                 document.getElementById('enemyDisplay').style.display = 'block';
                 document.getElementById('enemyType').innerHTML = name;
-                document.getElementById('enemyCoords').innerHTML = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-                
-                // Check for nearby child
-                const nearbyChild = children.find(c => Math.abs(c.lat - lat) < 0.01 && Math.abs(c.lng - lng) < 0.01);
-                if (nearbyChild) {
-                    document.getElementById('childNearby').innerHTML = `⚠️ Child ${nearbyChild.name} is NEARBY! Use tranquilizers!`;
-                    document.getElementById('childDisplay').style.display = 'block';
-                    document.getElementById('childName').innerHTML = nearbyChild.name;
-                    document.getElementById('childChip').innerHTML = nearbyChild.chip;
-                } else {
-                    document.getElementById('childNearby').innerHTML = `✅ No children nearby - All weapons authorized`;
-                    document.getElementById('childDisplay').style.display = 'none';
-                }
+                const nearby = children.find(c => Math.abs(c.lat - lat) < 0.01);
+                document.getElementById('childNearby').innerHTML = nearby ? `⚠️ Child ${nearby.name} nearby!` : '✅ Area clear';
+                document.getElementById('childDisplay').style.display = 'none';
             } else {
                 document.getElementById('enemyDisplay').style.display = 'none';
                 document.getElementById('childDisplay').style.display = 'block';
-                document.getElementById('childName').innerHTML = name;
-                document.getElementById('childChip').innerHTML = "Safe - No threat";
+                document.getElementById('childName').innerHTML = `${name} - SAFE`;
             }
-            
-            if (map) map.setView([lat, lng], 15);
-            addAlert(`🎯 Target selected: ${name}`, "info");
+            if (map) map.setView([lat, lng], 14);
+            addLog(`🎯 Target selected: ${name}`, 'info');
         }
 
-        // ============================================
-        // WEAPON FUNCTIONS - FIXED
-        // ============================================
-        function selectWeapon(weaponId) {
-            selectedWeaponId = weaponId;
-            document.querySelectorAll('.weapon-card').forEach(card => card.classList.remove('selected'));
-            const weaponCard = document.querySelector(`.weapon-card[data-weapon-id="${weaponId}"]`);
-            if (weaponCard) weaponCard.classList.add('selected');
-        }
-
-        function executeAttack(weaponId) {
-            const weapon = weapons.find(w => w.id === weaponId);
-            if (!weapon) { alert("Select a weapon first!"); return; }
-            if (weapon.quantity <= 0) { alert(`⚠️ No ${weapon.name} units available! Go to ARMORY to restock.`); return; }
-            if (!selectedTarget) { alert("⚠️ No target selected! Click on a map marker first."); return; }
-            
-            if (!confirm(`CAPTAIN AUTHORIZATION REQUIRED\n\nWeapon: ${weapon.icon} ${weapon.name}\nTarget: ${selectedTarget.name}\nLocation: ${selectedTarget.lat}, ${selectedTarget.lng}\n\nClick OK to EXECUTE STRIKE`)) {
-                addAlert(`❌ Strike cancelled by Captain`, "info");
-                return;
-            }
-            
-            weapon.quantity--;
-            
-            const mission = {
-                id: Date.now(),
-                weapon: weapon.name,
-                icon: weapon.icon,
-                target: selectedTarget.name,
-                targetLat: selectedTarget.lat,
-                targetLng: selectedTarget.lng,
-                status: "deployed",
-                timestamp: new Date().toLocaleTimeString()
-            };
-            missions.unshift(mission);
-            
-            document.getElementById('cameraStatus').innerHTML = `🚀 DEPLOYING ${weapon.name}...`;
-            document.getElementById('cameraIcon').innerHTML = "🚀";
-            addAlert(`🚀 DEPLOYED: ${weapon.icon} ${weapon.name} → ${selectedTarget.name}`, "warning");
-            renderCommandWeapons();
-            renderArmory();
-            updateMissionLog();
-            
-            // Status: ARRIVED
-            setTimeout(() => {
-                mission.status = "arrived";
-                updateMissionLog();
-                document.getElementById('cameraStatus').innerHTML = `📍 ${weapon.name} ARRIVED`;
-                addAlert(`📍 ARRIVED: ${weapon.name} reached target`, "info");
-            }, 3000);
-            
-            // Status: ELIMINATED
-            setTimeout(() => {
-                mission.status = "eliminated";
-                updateMissionLog();
-                threatsEliminated++;
-                document.getElementById('threatsCount').innerHTML = threatsEliminated;
-                document.getElementById('cameraStatus').innerHTML = `✅ TARGET ELIMINATED! Child SAFE!`;
-                document.getElementById('cameraIcon').innerHTML = "✅";
-                addAlert(`✅ ELIMINATED: ${selectedTarget.name} neutralized!`, "success");
-                setTimeout(() => { if (map) addRandomEnemy(); }, 2000);
-                
-                selectedTarget = null;
-                document.getElementById('enemyDisplay').style.display = 'none';
-                document.getElementById('childDisplay').style.display = 'none';
-            }, 6000);
-            
-            updateStats();
-        }
-
+        // ========== WEAPONS ==========
         function renderCommandWeapons() {
             const container = document.getElementById('commandWeapons');
             if (!container) return;
             container.innerHTML = weapons.map(w => `
-                <div class="weapon-card" data-weapon-id="${w.id}" onclick="selectWeapon(${w.id})">
+                <div class="weapon-card" onclick="selectWeapon(${w.id})" data-weapon-id="${w.id}">
                     <div class="weapon-icon">${w.icon}</div>
                     <div class="weapon-name">${w.name}</div>
-                    <div class="weapon-desc">${w.desc}</div>
-                    <div style="font-size: 11px; color: #00ff41; margin: 5px 0;">Stock: ${w.quantity}</div>
-                    <button class="execute-btn" onclick="event.stopPropagation(); executeAttack(${w.id})">💥 EXECUTE STRIKE</button>
+                    <div style="font-size:11px;color:#00ff41;">Stock: ${w.quantity}</div>
+                    <button class="execute-btn" onclick="event.stopPropagation(); executeAttack(${w.id})">💥 EXECUTE</button>
                 </div>
             `).join('');
         }
@@ -412,85 +249,103 @@
                 <div class="weapon-card">
                     <div class="weapon-icon">${w.icon}</div>
                     <div class="weapon-name">${w.name}</div>
-                    <div class="weapon-desc">${w.desc}</div>
                     <div class="quantity-control">
-                        <button class="quantity-btn" onclick="updateQuantity(${w.id}, -1)">-</button>
+                        <button class="quantity-btn" onclick="updateQty(${w.id}, -1)">-</button>
                         <span class="quantity-value">${w.quantity}</span>
-                        <button class="quantity-btn" onclick="updateQuantity(${w.id}, 1)">+</button>
+                        <button class="quantity-btn" onclick="updateQty(${w.id}, 1)">+</button>
                     </div>
                 </div>
             `).join('');
-            document.getElementById('totalWeapons').innerHTML = weapons.reduce((sum, w) => sum + w.quantity, 0);
+            document.getElementById('totalWeapons').innerHTML = weapons.reduce((s, w) => s + w.quantity, 0);
         }
 
-        function updateQuantity(weaponId, change) {
+        function selectWeapon(id) { selectedWeaponId = id; document.querySelectorAll('.weapon-card').forEach(c => c.classList.remove('selected')); document.querySelector(`.weapon-card[data-weapon-id="${id}"]`)?.classList.add('selected'); }
+        function updateQty(id, delta) { const w = weapons.find(w => w.id === id); if (w) { w.quantity = Math.max(0, w.quantity + delta); renderArmory(); renderCommandWeapons(); } }
+
+        function executeAttack(weaponId) {
             const weapon = weapons.find(w => w.id === weaponId);
-            if (weapon) { 
-                weapon.quantity = Math.max(0, weapon.quantity + change); 
-                renderArmory(); 
-                renderCommandWeapons(); 
-            }
+            if (!weapon) return alert("Select weapon first");
+            if (weapon.quantity <= 0) return alert(`No ${weapon.name} available`);
+            if (!selectedTarget) return alert("No target selected");
+            if (!confirm(`Captain: Deploy ${weapon.icon} ${weapon.name} against ${selectedTarget.name}?`)) return;
+
+            weapon.quantity--;
+            const mission = { id: Date.now(), weapon: weapon.name, icon: weapon.icon, target: selectedTarget.name, lat: selectedTarget.lat, lng: selectedTarget.lng, status: 'deployed', time: new Date().toLocaleTimeString() };
+            missions.unshift(mission);
+            renderCommandWeapons(); renderArmory(); updateMissionLog();
+            addLog(`🚀 DEPLOYED: ${weapon.name} → ${selectedTarget.name}`, 'warning');
+            document.getElementById('cameraStatus').innerHTML = `🚀 Deploying ${weapon.name}...`;
+
+            setTimeout(() => { mission.status = 'arrived'; updateMissionLog(); addLog(`📍 ARRIVED: ${weapon.name} at target`, 'info'); document.getElementById('cameraStatus').innerHTML = `📍 Weapon arrived`; }, 3000);
+            setTimeout(() => { 
+                mission.status = 'eliminated'; updateMissionLog(); threatsEliminated++; 
+                document.getElementById('threatsCount').innerHTML = threatsEliminated;
+                addLog(`✅ ELIMINATED: ${selectedTarget.name} neutralized!`, 'success');
+                document.getElementById('cameraStatus').innerHTML = `✅ Target eliminated`;
+                document.getElementById('cameraIcon').innerHTML = "✅";
+                if (map) addRandomEnemy();
+                selectedTarget = null;
+                document.getElementById('enemyDisplay').style.display = 'none';
+                document.getElementById('childDisplay').style.display = 'none';
+            }, 6000);
+            updateStats();
         }
 
         function updateMissionLog() {
             const container = document.getElementById('missionLog');
             if (!container) return;
-            if (missions.length === 0) {
-                container.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">No missions yet. Select a target and execute!</div>';
-                return;
-            }
-            container.innerHTML = missions.slice(0, 10).map(m => `
-                <div class="mission-entry status-${m.status}">
-                    <strong>${m.icon} ${m.weapon}</strong> → ${m.target}
-                    <span style="float:right;">${m.timestamp}</span>
-                    <div style="font-size: 10px;">Status: ${m.status.toUpperCase()} | 📍 ${m.targetLat.toFixed(4)}, ${m.targetLng.toFixed(4)}</div>
-                </div>
-            `).join('');
+            if (missions.length === 0) { container.innerHTML = '<div style="text-align:center;color:#aaa;">No missions yet</div>'; return; }
+            container.innerHTML = missions.slice(0,10).map(m => `<div class="mission-entry status-${m.status}"><strong>${m.icon} ${m.weapon}</strong> → ${m.target}<span style="float:right;">${m.time}</span><div style="font-size:10px;">Status: ${m.status.toUpperCase()}</div></div>`).join('');
             document.getElementById('activeMissions').innerHTML = missions.filter(m => m.status !== 'eliminated').length;
         }
 
         function updateStats() {
-            const deployed = missions.filter(m => m.status === 'deployed').length;
-            const arrived = missions.filter(m => m.status === 'arrived').length;
-            const eliminated = missions.filter(m => m.status === 'eliminated').length;
-            document.getElementById('deployedStat').innerHTML = deployed;
-            document.getElementById('arrivedStat').innerHTML = arrived;
-            document.getElementById('eliminatedStat').innerHTML = eliminated;
+            document.getElementById('deployedStat').innerHTML = missions.filter(m => m.status === 'deployed').length;
+            document.getElementById('arrivedStat').innerHTML = missions.filter(m => m.status === 'arrived').length;
+            document.getElementById('eliminatedStat').innerHTML = missions.filter(m => m.status === 'eliminated').length;
         }
 
-        function addAlert(msg, type) {
+        function addLog(msg, type) {
             const log = document.getElementById('missionLog');
             if (!log) return;
             if (log.innerHTML.includes('No missions yet')) log.innerHTML = '';
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'mission-entry status-deployed';
-            alertDiv.style.borderColor = type === 'warning' ? '#ffaa00' : (type === 'info' ? '#ff6600' : '#00ff41');
-            alertDiv.innerHTML = `<strong>📢</strong> ${msg} <span style="float:right;">${new Date().toLocaleTimeString()}</span>`;
-            log.prepend(alertDiv);
-            setTimeout(() => { if (alertDiv) alertDiv.remove(); }, 8000);
+            const div = document.createElement('div');
+            div.className = 'mission-entry status-deployed';
+            div.style.borderColor = type === 'warning' ? '#ffaa00' : (type === 'info' ? '#ff6600' : '#00ff41');
+            div.innerHTML = `<strong>📢</strong> ${msg} <span style="float:right;">${new Date().toLocaleTimeString()}</span>`;
+            log.prepend(div);
         }
 
-        function registerChild(event) {
-            event.preventDefault();
-            const newChild = {
-                id: nextChildId++,
-                name: document.getElementById('regName').value,
-                age: parseInt(document.getElementById('regAge').value),
-                parent: document.getElementById('regParent').value,
-                chip: document.getElementById('regDevice').value,
-                lat: 40.7128 + (Math.random() - 0.5) * 0.1,
-                lng: -74.0060 + (Math.random() - 0.5) * 0.1,
-                avatar: "👶"
-            };
-            children.push(newChild);
+        function registerChild(e) {
+            e.preventDefault();
+            children.push({ id: nextId++, name: document.getElementById('regName').value, age: parseInt(document.getElementById('regAge').value), parent: document.getElementById('regParent').value, chip: document.getElementById('regDevice').value, lat: 40.7128 + (Math.random()-0.5)*0.1, lng: -74.0060 + (Math.random()-0.5)*0.1 });
             document.getElementById('childrenCount').innerHTML = children.length;
-            alert(`✅ ${newChild.name} registered! GPS chip activated.`);
-            initCommandMap();
-            event.target.reset();
+            alert("Child registered successfully!");
+            initMap();
+            e.target.reset();
         }
 
-        // ============================================
-        // DEEPSEEK AI API
-        // ============================================
+        // ========== AI ==========
         async function askAI() {
-            const user
+            const key = document.getElementById('apiKeyInput').value;
+            if (!key) { alert("Enter DeepSeek API key from platform.deepseek.com"); return; }
+            const question = document.getElementById('aiQuestion').value;
+            if (!question) return;
+            const respDiv = document.getElementById('aiResponse');
+            respDiv.style.display = 'block';
+            document.getElementById('responseText').innerHTML = "Thinking...";
+            try {
+                const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'system', content: 'You are a tactical advisor for child protection.' }, { role: 'user', content: question }], temperature: 0.7 })
+                });
+                const data = await res.json();
+                document.getElementById('responseText').innerHTML = data.choices?.[0]?.message?.content || "No response";
+            } catch(e) { document.getElementById('responseText').innerHTML = "Error: " + e.message; }
+        }
+
+        // ========== INIT ==========
+        document.addEventListener('DOMContentLoaded', () => { initMap(); renderCommandWeapons(); renderArmory(); updateMissionLog(); });
+    </script>
+</body>
+</html>
